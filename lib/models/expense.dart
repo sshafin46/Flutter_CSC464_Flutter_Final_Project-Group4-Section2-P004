@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Expense {
   final String? id;
   final String userId;
@@ -25,14 +27,18 @@ class Expense {
       userId: data['userId'] ?? '',
       name: data['name'] ?? '',
       amount: (data['amount'] ?? 0).toDouble(),
-      date: data['date'] is DateTime
-          ? data['date']
-          : DateTime.parse(data['date']),
+      date: data['date'] is Timestamp
+          ? (data['date'] as Timestamp).toDate()
+          : (data['date'] is DateTime
+              ? data['date']
+              : DateTime.parse(data['date'].toString())),
       category: data['category'] ?? 'Other',
       description: data['description'],
-      createdAt: data['createdAt'] is DateTime
-          ? data['createdAt']
-          : DateTime.parse(data['createdAt']),
+      createdAt: data['createdAt'] is Timestamp
+          ? (data['createdAt'] as Timestamp).toDate()
+          : (data['createdAt'] is DateTime
+              ? data['createdAt']
+              : DateTime.parse(data['createdAt'].toString())),
     );
   }
 
@@ -41,10 +47,11 @@ class Expense {
       'userId': userId,
       'name': name,
       'amount': amount,
-      'date': date.toIso8601String(),
+      'date': Timestamp.fromDate(date),
       'category': category,
       'description': description,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
     };
   }
 }
+

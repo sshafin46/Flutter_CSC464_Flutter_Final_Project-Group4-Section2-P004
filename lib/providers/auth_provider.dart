@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
-
-class MockUser {
-  final String uid;
-  final String email;
-
-  MockUser({required this.uid, required this.email});
-}
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthProvider extends ChangeNotifier {
-  MockUser? _currentUser;
-  final Map<String, String> _users = {'test@example.com': 'password123'};
-
-  MockUser? get currentUser => _currentUser;
-  bool get isAuthenticated => _currentUser != null;
-
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  User? _currentUser;
   bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
   String? _error;
+
+  User? get currentUser => _currentUser;
+  bool get isAuthenticated => _currentUser != null;
+  bool get isLoading => _isLoading;
   String? get error => _error;
+
+  AuthProvider() {
+    _initializeAuthListener();
+  }
+
+  void _initializeAuthListener() {
+    _firebaseAuth.authStateChanges().listen((User? user) {
+      _currentUser = user;
+      notifyListeners();
+    });
+  }
 
   void clearError() {
     _error = null;
@@ -30,26 +33,20 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (!_users.containsKey(email)) {
-        _error = 'User not found';
-        return false;
-      }
-
-      if (_users[email] != password) {
-        _error = 'Invalid password';
-        return false;
-      }
-
-      _currentUser = MockUser(uid: email.hashCode.toString(), email: email);
-      _error = null;
+      await _firebaseAuth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
       return true;
+    } on FirebaseAuthException catch (e) {
+      _error = _getErrorMessage(e.code);
+      return false;
     } catch (e) {
-      _error = e.toString();
+      _error = 'An unexpected error occurred';
       return false;
     } finally {
       _isLoading = false;
@@ -67,22 +64,26 @@ class AuthProvider extends ChangeNotifier {
     String? address,
   }) async {
     _isLoading = true;
+    _error = null;
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final UserCredential userCredential =
+          await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
 
-      if (_users.containsKey(email)) {
-        _error = 'User already exists';
-        return false;
-      }
+      // Update user profile
+      await userCredential.user?.updateDisplayName('$firstName $lastName');
+      await userCredential.user?.reload();
 
-      _users[email] = password;
-      _currentUser = MockUser(uid: email.hashCode.toString(), email: email);
-      _error = null;
       return true;
+    } on FirebaseAuthException catch (e) {
+      _error = _getErrorMessage(e.code);
+      return false;
     } catch (e) {
-      _error = e.toString();
+      _error = 'An unexpected error occurred';
       return false;
     } finally {
       _isLoading = false;
@@ -91,21 +92,49 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    _currentUser = null;
+    try {
+      await _firebaseAuth.signOut();
+    } catch (e) {
+      _error = 'Failed to sign out';
+    }
     notifyListeners();
   }
 
   Future<bool> sendPasswordResetEmail(String email) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
-      if (!_users.containsKey(email)) {
-        _error = 'User not found';
-        return false;
-      }
-      _error = null;
+      await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
+      _error = 'Password reset email sent';
       return true;
-    } catch (e) {
-      _error = e.toString();
+    } on FirebaseAuthException catch (e) {
+      _error = _getErrorMessage(e.code);
       return false;
+    } catch (e) {
+      _error = 'Failed to send reset email';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No user found with this email';
+      case 'wrong-password':
+        return 'Invalid password';
+      case 'email-already-in-use':
+        return 'Email is already registered';
+      case 'weak-password':
+        return 'Password is too weak';
+      case 'invalid-email':
+        return 'Invalid email format';
+      default:
+        return 'Authentication failed: $code';
     }
   }
 }
