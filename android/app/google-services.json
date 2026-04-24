@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "508758491005",
+    "project_id": "simpleexpansecalculator",
+    "storage_bucket": "simpleexpansecalculator.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508758491005:android:d9af9e24788cc79db15614",
+        "android_client_info": {
+          "package_name": "com.example.expense_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLV23E9uISoWY_fAXztpkm-WtNmGs576A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

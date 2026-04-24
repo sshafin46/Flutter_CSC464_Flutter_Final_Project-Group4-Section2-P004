@@ -31,8 +31,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     _name = isEdit ? widget.expense!.name : '';
     _amount = isEdit ? widget.expense!.amount : 0.0;
     _date = isEdit ? widget.expense!.date : DateTime.now();
-    _category =
-        isEdit ? widget.expense!.category : DEFAULT_CATEGORIES.first;
+    _category = isEdit ? widget.expense!.category : DEFAULT_CATEGORIES.first;
     _description = isEdit ? widget.expense!.description : '';
   }
 
@@ -61,7 +60,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     }
   }
 
-  void _submitForm() async {
+  void _submitForm() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
@@ -92,12 +91,15 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         createdAt: widget.expense?.createdAt ?? DateTime.now(),
       );
 
+      // SOLUTION OPTION 1: Fire and Forget
+      // We do not 'await' these calls so the UI can proceed immediately to pop()
       if (widget.expense == null) {
-        await expenseProvider.addExpense(newOrUpdatedExpense);
+        expenseProvider.addExpense(newOrUpdatedExpense);
       } else {
-        await expenseProvider.updateExpense(newOrUpdatedExpense);
+        expenseProvider.updateExpense(newOrUpdatedExpense);
       }
 
+      // Navigate back to Home Screen immediately
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -122,7 +124,6 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               TextFormField(
                 initialValue: _name,
                 decoration: InputDecoration(
@@ -148,7 +149,6 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 onSaved: (value) => _name = value!,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 initialValue: _amount == 0.0 ? '' : _amount.toString(),
                 decoration: InputDecoration(
@@ -181,7 +181,6 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 onSaved: (value) => _amount = double.parse(value!),
               ),
               const SizedBox(height: 16),
-
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -215,8 +214,6 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-
               DropdownButtonFormField<String>(
                 value: _category,
                 decoration: InputDecoration(
@@ -242,12 +239,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                     child: Text(cat),
                   );
                 }).toList(),
-                onChanged: (value) =>
-                    setState(() => _category = value!),
+                onChanged: (value) => setState(() => _category = value!),
                 onSaved: (value) => _category = value!,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 initialValue: _description,
                 decoration: InputDecoration(
@@ -272,8 +267,6 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 onSaved: (value) => _description = value,
               ),
               const SizedBox(height: 32),
-
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
