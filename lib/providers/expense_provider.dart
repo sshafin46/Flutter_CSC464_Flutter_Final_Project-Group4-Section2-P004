@@ -9,6 +9,7 @@ class ExpenseProvider extends ChangeNotifier {
 
   List<Expense> _allExpenses = [];
   StreamSubscription? _subscription;
+  String _currentUid = '';
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -26,15 +27,14 @@ class ExpenseProvider extends ChangeNotifier {
     List<Expense> result = [..._allExpenses];
 
     if (_currentCategoryFilter != 'All') {
-      result = result
-          .where((e) => e.category == _currentCategoryFilter)
-          .toList();
+      result =
+          result.where((e) => e.category == _currentCategoryFilter).toList();
     }
 
     if (_searchQuery.isNotEmpty) {
       result = result
-          .where((e) =>
-              e.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where(
+              (e) => e.name.toLowerCase().contains(_searchQuery.toLowerCase()))
           .toList();
     }
 
@@ -49,6 +49,7 @@ class ExpenseProvider extends ChangeNotifier {
 
   void updateUid(String uid) {
     _subscription?.cancel();
+    _currentUid = uid;
 
     if (uid.isEmpty) {
       _allExpenses = [];
@@ -75,7 +76,7 @@ class ExpenseProvider extends ChangeNotifier {
   }
 
   Future<void> deleteExpense(String id) async {
-    await _firestoreService.deleteExpense(id);
+    await _firestoreService.deleteExpense(id, _currentUid);
   }
 
   void setSearchQuery(String query) {

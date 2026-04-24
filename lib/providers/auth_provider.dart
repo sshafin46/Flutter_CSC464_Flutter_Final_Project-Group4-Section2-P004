@@ -1,24 +1,24 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class AuthProvider extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+class MockUser {
+  final String uid;
+  final String email;
 
-  User? get currentUser => _auth.currentUser;
-  bool get isAuthenticated => _auth.currentUser != null;
+  MockUser({required this.uid, required this.email});
+}
+
+class AuthProvider extends ChangeNotifier {
+  MockUser? _currentUser;
+  final Map<String, String> _users = {'test@example.com': 'password123'};
+
+  MockUser? get currentUser => _currentUser;
+  bool get isAuthenticated => _currentUser != null;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   String? _error;
   String? get error => _error;
-
-  AuthProvider() {
-
-    _auth.authStateChanges().listen((user) {
-      notifyListeners();
-    });
-  }
 
   void clearError() {
     _error = null;
@@ -33,14 +33,23 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (!_users.containsKey(email)) {
+        _error = 'User not found';
+        return false;
+      }
+
+      if (_users[email] != password) {
+        _error = 'Invalid password';
+        return false;
+      }
+
+      _currentUser = MockUser(uid: email.hashCode.toString(), email: email);
       _error = null;
       return true;
-    } on FirebaseAuthException catch (e) {
-      _error = e.message;
+    } catch (e) {
+      _error = e.toString();
       return false;
     } finally {
       _isLoading = false;
@@ -61,14 +70,19 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (_users.containsKey(email)) {
+        _error = 'User already exists';
+        return false;
+      }
+
+      _users[email] = password;
+      _currentUser = MockUser(uid: email.hashCode.toString(), email: email);
       _error = null;
       return true;
-    } on FirebaseAuthException catch (e) {
-      _error = e.message;
+    } catch (e) {
+      _error = e.toString();
       return false;
     } finally {
       _isLoading = false;
@@ -77,17 +91,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    _currentUser = null;
     notifyListeners();
   }
 
   Future<bool> sendPasswordResetEmail(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      if (!_users.containsKey(email)) {
+        _error = 'User not found';
+        return false;
+      }
+      _error = null;
       return true;
-    } on FirebaseAuthException catch (e) {
-      _error = e.message;
-      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
       return false;
     }
   }

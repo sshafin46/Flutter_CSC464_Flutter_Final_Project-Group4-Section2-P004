@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Expense {
   final String? id;
   final String userId;
@@ -21,29 +19,32 @@ class Expense {
     required this.createdAt,
   });
 
-  factory Expense.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory Expense.fromMap(Map<String, dynamic> data, String id) {
     return Expense(
-      id: doc.id,
+      id: id,
       userId: data['userId'] ?? '',
       name: data['name'] ?? '',
       amount: (data['amount'] ?? 0).toDouble(),
-      date: (data['date'] as Timestamp).toDate(),
+      date: data['date'] is DateTime
+          ? data['date']
+          : DateTime.parse(data['date']),
       category: data['category'] ?? 'Other',
       description: data['description'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: data['createdAt'] is DateTime
+          ? data['createdAt']
+          : DateTime.parse(data['createdAt']),
     );
   }
-  
-  Map<String, dynamic> toFirestore() {
+
+  Map<String, dynamic> toMap() {
     return {
       'userId': userId,
       'name': name,
       'amount': amount,
-      'date': Timestamp.fromDate(date),
+      'date': date.toIso8601String(),
       'category': category,
       'description': description,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 }
